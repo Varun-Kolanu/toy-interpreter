@@ -118,6 +118,15 @@ impl Scanner {
                 };
                 self.add_non_literal_token(token_type);
             }
+            '/' => {
+                if self.match_next('/') {
+                    while !self.is_at_end() && get_char(&self.source, self.current) != '\n' {
+                        self.advance();
+                    }
+                } else {
+                    self.add_non_literal_token(TokenType::SLASH);
+                }
+            }
 
             _ => {
                 self.had_error = true;
@@ -201,6 +210,7 @@ enum TokenType {
     GREATER_EQUAL,
     LESS,
     LESS_EQUAL,
+    SLASH,
 
     EOF,
 }
