@@ -94,6 +94,14 @@ impl Scanner {
                 };
                 self.add_non_literal_token(token_type);
             }
+            '!' => {
+                let token_type = if self.match_next('=') {
+                    TokenType::BANG_EQUAL
+                } else {
+                    TokenType::BANG
+                };
+                self.add_non_literal_token(token_type);
+            }
 
             _ => {
                 self.had_error = true;
@@ -171,6 +179,8 @@ enum TokenType {
     // One or two character tokens
     EQUAL,
     EQUAL_EQUAL,
+    BANG,
+    BANG_EQUAL,
 
     EOF,
 }
