@@ -135,6 +135,8 @@ impl Scanner {
             _ => {
                 if is_digit(c) {
                     self.consume_number();
+                } else if is_alpha(c) {
+                    self.consume_identifier();
                 } else {
                     self.had_error = true;
                     error(
@@ -172,10 +174,10 @@ impl Scanner {
         }
 
         if self.peek() == '.' && is_digit(self.peek_next()) {
-            self.advance();
+            self.current += 1;
 
             while is_digit(self.peek()) {
-                self.advance();
+                self.current += 1;
             }
         }
 
@@ -185,24 +187,32 @@ impl Scanner {
         self.add_token(TokenType::NUMBER, Literal::NUMBER(number));
     }
 
+    fn consume_identifier(&mut self) {
+        while is_alpha_numeric(self.peek()) {
+            self.current += 1;
+        }
+
+        self.add_non_literal_token(TokenType::IDENTIFIER);
+    }
+
     fn peek_next(&self) -> char {
         if self.current + 1 >= self.source.len() {
             return '\0';
         }
-        return get_char(&self.source, self.current + 1);
+        get_char(&self.source, self.current + 1)
     }
 
     fn advance(&mut self) -> char {
         let character = self.peek();
         self.current += 1;
-        return character;
+        character
     }
 
     fn peek(&self) -> char {
         if self.is_at_end() {
             return '\0';
         }
-        return get_char(&self.source, self.current);
+        get_char(&self.source, self.current)
     }
 
     fn match_next(&mut self, character_to_match: char) -> bool {
@@ -212,11 +222,11 @@ impl Scanner {
         }
 
         self.current += 1;
-        return true;
+        true
     }
 
     fn is_at_end(&self) -> bool {
-        return self.current >= self.source.len();
+        self.current >= self.source.len()
     }
 
     fn add_non_literal_token(&mut self, token_type: TokenType) {
@@ -277,6 +287,8 @@ enum TokenType {
     STRING,
     NUMBER,
 
+    IDENTIFIER,
+
     EOF,
 }
 
@@ -321,12 +333,22 @@ fn error(line: usize, message: String) {
 }
 
 fn get_char(text: &str, index: usize) -> char {
-    return text.chars().nth(index).unwrap_or_else(|| {
+    text.chars().nth(index).unwrap_or_else(|| {
         writeln!(io::stderr(), "Index out of bounds for source at {}", index).unwrap();
-        return '\0';
-    });
+        '\0'
+    })
 }
 
 fn is_digit(character: char) -> bool {
-    return character >= '0' && character <= '9';
+    character >= '0' && character <= '9'
+}
+
+fn is_alpha(character: char) -> bool {
+    character == '_'
+        || (character >= 'A' && character <= 'Z')
+        || (character >= 'a' && character <= 'z')
+}
+
+fn is_alpha_numeric(character: char) -> bool {
+    is_digit(character) || is_alpha(character)
 }
