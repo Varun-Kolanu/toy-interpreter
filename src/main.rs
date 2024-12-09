@@ -102,6 +102,22 @@ impl Scanner {
                 };
                 self.add_non_literal_token(token_type);
             }
+            '>' => {
+                let token_type = if self.match_next('=') {
+                    TokenType::GREATER_EQUAL
+                } else {
+                    TokenType::GREATER
+                };
+                self.add_non_literal_token(token_type);
+            }
+            '<' => {
+                let token_type = if self.match_next('=') {
+                    TokenType::LESS_EQUAL
+                } else {
+                    TokenType::LESS
+                };
+                self.add_non_literal_token(token_type);
+            }
 
             _ => {
                 self.had_error = true;
@@ -181,6 +197,10 @@ enum TokenType {
     EQUAL_EQUAL,
     BANG,
     BANG_EQUAL,
+    GREATER,
+    GREATER_EQUAL,
+    LESS,
+    LESS_EQUAL,
 
     EOF,
 }
