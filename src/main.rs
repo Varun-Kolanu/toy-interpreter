@@ -1,4 +1,5 @@
 use std::env;
+use std::fmt;
 use std::fs;
 use std::io::{self, Write};
 use std::process::exit;
@@ -68,7 +69,7 @@ impl Scanner {
         self.tokens.push(Token {
             token_type: TokenType::EOF,
             lexeme: String::from(""),
-            literal: String::from("null"),
+            literal: Literal::NULL,
             line: self.line,
         });
     }
@@ -132,11 +133,15 @@ impl Scanner {
             '"' => self.consume_string(),
 
             _ => {
-                self.had_error = true;
-                error(
-                    self.line,
-                    String::from(format!("Unexpected character: {}", c)),
-                )
+                if is_digit(c) {
+                    self.consume_number();
+                } else {
+                    self.had_error = true;
+                    error(
+                        self.line,
+                        String::from(format!("Unexpected character: {}", c)),
+                    )
+                }
             }
         }
     }
@@ -157,8 +162,34 @@ impl Scanner {
 
         self.current += 1;
 
-        let literal = self.source[self.start + 1..self.current - 1].to_string();
+        let literal = Literal::STRING(self.source[self.start + 1..self.current - 1].to_string());
         self.add_token(TokenType::STRING, literal);
+    }
+
+    fn consume_number(&mut self) {
+        while is_digit(self.peek()) {
+            self.advance();
+        }
+
+        if self.peek() == '.' && is_digit(self.peek_next()) {
+            self.advance();
+
+            while is_digit(self.peek()) {
+                self.advance();
+            }
+        }
+
+        let number: f64 = self.source[self.start..self.current]
+            .parse()
+            .expect("Failed to parse the string into double");
+        self.add_token(TokenType::NUMBER, Literal::NUMBER(number));
+    }
+
+    fn peek_next(&self) -> char {
+        if self.current + 1 >= self.source.len() {
+            return '\0';
+        }
+        return get_char(&self.source, self.current + 1);
     }
 
     fn advance(&mut self) -> char {
@@ -168,6 +199,9 @@ impl Scanner {
     }
 
     fn peek(&self) -> char {
+        if self.is_at_end() {
+            return '\0';
+        }
         return get_char(&self.source, self.current);
     }
 
@@ -186,10 +220,10 @@ impl Scanner {
     }
 
     fn add_non_literal_token(&mut self, token_type: TokenType) {
-        self.add_token(token_type, String::from("null"));
+        self.add_token(token_type, Literal::NULL);
     }
 
-    fn add_token(&mut self, token_type: TokenType, literal: String) {
+    fn add_token(&mut self, token_type: TokenType, literal: Literal) {
         let lexeme = &self.source[self.start..self.current];
         self.tokens.push(Token {
             token_type,
@@ -241,21 +275,44 @@ enum TokenType {
 
     // Literals
     STRING,
+    NUMBER,
 
     EOF,
+}
+
+enum Literal {
+    STRING(String),
+    NUMBER(f64),
+    NULL,
+}
+
+impl fmt::Debug for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Literal::STRING(s) => write!(f, "{}", s),
+            Literal::NUMBER(n) => {
+                if n.fract() == 0.0 {
+                    write!(f, "{:.1}", n)
+                } else {
+                    write!(f, "{}", n)
+                }
+            }
+            Literal::NULL => write!(f, "null"),
+        }
+    }
 }
 
 #[allow(dead_code)]
 struct Token {
     token_type: TokenType,
     lexeme: String,
-    literal: String,
+    literal: Literal,
     line: usize,
 }
 
 impl Token {
     fn to_string(&self) -> String {
-        format!("{:?} {} {}", self.token_type, self.lexeme, self.literal)
+        format!("{:?} {} {:?}", self.token_type, self.lexeme, self.literal)
     }
 }
 
@@ -268,4 +325,8 @@ fn get_char(text: &str, index: usize) -> char {
         writeln!(io::stderr(), "Index out of bounds for source at {}", index).unwrap();
         return '\0';
     });
+}
+
+fn is_digit(character: char) -> bool {
+    return character >= '0' && character <= '9';
 }
