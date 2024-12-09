@@ -1,2 +1,2 @@
-foo bar _hello
-and or
+/* foo bar _hello
+and or *-() {}

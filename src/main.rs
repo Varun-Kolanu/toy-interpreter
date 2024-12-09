@@ -127,6 +127,8 @@ impl Scanner {
                     while !self.is_at_end() && self.peek() != '\n' {
                         self.current += 1;
                     }
+                } else if self.match_next('*') {
+                    self.consume_multiline_comment();
                 } else {
                     self.add_non_literal_token(TokenType::SLASH);
                 }
@@ -149,6 +151,23 @@ impl Scanner {
                 }
             }
         }
+    }
+
+    fn consume_multiline_comment(&mut self) {
+        while !self.is_at_end() && !(self.peek() == '*' && self.peek_next() == '/') {
+            let character = self.advance();
+            if character == '\n' {
+                self.line += 1;
+            }
+        }
+
+        if self.is_at_end() {
+            error(self.line, String::from("Missing trailing */ symbol."));
+            self.had_error = true;
+            return;
+        }
+
+        self.current += 2;
     }
 
     fn consume_string(&mut self) {
