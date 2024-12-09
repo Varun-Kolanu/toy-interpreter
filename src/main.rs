@@ -76,16 +76,25 @@ impl Scanner {
     fn scan_token(&mut self) {
         let c = self.advance();
         match c {
-            '(' => self.add_token(TokenType::LEFT_PAREN, String::from("null")),
-            ')' => self.add_token(TokenType::RIGHT_PAREN, String::from("null")),
-            '{' => self.add_token(TokenType::LEFT_BRACE, String::from("null")),
-            '}' => self.add_token(TokenType::RIGHT_BRACE, String::from("null")),
-            ',' => self.add_token(TokenType::COMMA, String::from("null")),
-            '.' => self.add_token(TokenType::DOT, String::from("null")),
-            '-' => self.add_token(TokenType::MINUS, String::from("null")),
-            '+' => self.add_token(TokenType::PLUS, String::from("null")),
-            ';' => self.add_token(TokenType::SEMICOLON, String::from("null")),
-            '*' => self.add_token(TokenType::STAR, String::from("null")),
+            '(' => self.add_non_literal_token(TokenType::LEFT_PAREN),
+            ')' => self.add_non_literal_token(TokenType::RIGHT_PAREN),
+            '{' => self.add_non_literal_token(TokenType::LEFT_BRACE),
+            '}' => self.add_non_literal_token(TokenType::RIGHT_BRACE),
+            ',' => self.add_non_literal_token(TokenType::COMMA),
+            '.' => self.add_non_literal_token(TokenType::DOT),
+            '-' => self.add_non_literal_token(TokenType::MINUS),
+            '+' => self.add_non_literal_token(TokenType::PLUS),
+            ';' => self.add_non_literal_token(TokenType::SEMICOLON),
+            '*' => self.add_non_literal_token(TokenType::STAR),
+            '=' => {
+                let token_type = if self.match_next('=') {
+                    TokenType::EQUAL_EQUAL
+                } else {
+                    TokenType::EQUAL
+                };
+                self.add_non_literal_token(token_type);
+            }
+
             _ => {
                 self.had_error = true;
                 error(
@@ -97,21 +106,27 @@ impl Scanner {
     }
 
     fn advance(&mut self) -> char {
-        let character = self.source.chars().nth(self.current).unwrap_or_else(|| {
-            writeln!(
-                io::stderr(),
-                "Index out of bounds for source at {}",
-                self.current
-            )
-            .unwrap();
-            return '\0';
-        });
+        let character = get_char(&self.source, self.current);
         self.current += 1;
         return character;
     }
 
+    fn match_next(&mut self, character_to_match: char) -> bool {
+        let current_char = get_char(&self.source, self.current);
+        if current_char != character_to_match {
+            return false;
+        }
+
+        self.current += 1;
+        return true;
+    }
+
     fn is_at_end(&self) -> bool {
         return self.current >= self.source.len();
+    }
+
+    fn add_non_literal_token(&mut self, token_type: TokenType) {
+        self.add_token(token_type, String::from("null"));
     }
 
     fn add_token(&mut self, token_type: TokenType, literal: String) {
@@ -153,6 +168,10 @@ enum TokenType {
     SEMICOLON,
     STAR,
 
+    // One or two character tokens
+    EQUAL,
+    EQUAL_EQUAL,
+
     EOF,
 }
 
@@ -172,4 +191,11 @@ impl Token {
 
 fn error(line: usize, message: String) {
     writeln!(io::stderr(), "[line {}] Error: {}", line, message).unwrap();
+}
+
+fn get_char(text: &str, index: usize) -> char {
+    return text.chars().nth(index).unwrap_or_else(|| {
+        writeln!(io::stderr(), "Index out of bounds for source at {}", index).unwrap();
+        return '\0';
+    });
 }
