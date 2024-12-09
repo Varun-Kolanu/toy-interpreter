@@ -1,6 +1,7 @@
 use std::env;
 use std::fs;
 use std::io::{self, Write};
+use std::process::exit;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -42,6 +43,10 @@ fn run(source: String) {
     for token in scanner.tokens {
         println!("{}", token.to_string());
     }
+
+    if scanner.had_error {
+        exit(65);
+    }
 }
 
 struct Scanner {
@@ -50,6 +55,7 @@ struct Scanner {
     start: usize,
     current: usize,
     line: usize,
+    had_error: bool,
 }
 
 impl Scanner {
@@ -64,7 +70,7 @@ impl Scanner {
             lexeme: String::from(""),
             literal: String::from("null"),
             line: self.line,
-        })
+        });
     }
 
     fn scan_token(&mut self) {
@@ -80,10 +86,13 @@ impl Scanner {
             '+' => self.add_token(TokenType::PLUS, String::from("null")),
             ';' => self.add_token(TokenType::SEMICOLON, String::from("null")),
             '*' => self.add_token(TokenType::STAR, String::from("null")),
-            _ => error(
-                self.line,
-                String::from(format!("Unexpected character {}", c)),
-            ),
+            _ => {
+                self.had_error = true;
+                error(
+                    self.line,
+                    String::from(format!("Unexpected character: {}", c)),
+                )
+            }
         }
     }
 
@@ -124,6 +133,7 @@ impl Default for Scanner {
             start: 0,
             current: 0,
             line: 1,
+            had_error: false,
         }
     }
 }
