@@ -120,8 +120,8 @@ impl Scanner {
             }
             '/' => {
                 if self.match_next('/') {
-                    while !self.is_at_end() && get_char(&self.source, self.current) != '\n' {
-                        self.advance();
+                    while !self.is_at_end() && self.peek() != '\n' {
+                        self.current += 1;
                     }
                 } else {
                     self.add_non_literal_token(TokenType::SLASH);
@@ -129,6 +129,7 @@ impl Scanner {
             }
             ' ' | '\r' | '\t' => {}
             '\n' => self.line += 1,
+            '"' => self.consume_string(),
 
             _ => {
                 self.had_error = true;
@@ -140,14 +141,38 @@ impl Scanner {
         }
     }
 
+    fn consume_string(&mut self) {
+        while !self.is_at_end() && self.peek() != '"' {
+            let character = self.advance();
+            if character == '\n' {
+                self.line += 1;
+            }
+        }
+
+        if self.is_at_end() {
+            error(self.line, String::from("Unterminated string."));
+            self.had_error = true;
+            return;
+        }
+
+        self.current += 1;
+
+        let literal = self.source[self.start + 1..self.current - 1].to_string();
+        self.add_token(TokenType::STRING, literal);
+    }
+
     fn advance(&mut self) -> char {
-        let character = get_char(&self.source, self.current);
+        let character = self.peek();
         self.current += 1;
         return character;
     }
 
+    fn peek(&self) -> char {
+        return get_char(&self.source, self.current);
+    }
+
     fn match_next(&mut self, character_to_match: char) -> bool {
-        let current_char = get_char(&self.source, self.current);
+        let current_char = self.peek();
         if current_char != character_to_match {
             return false;
         }
@@ -213,6 +238,9 @@ enum TokenType {
     LESS,
     LESS_EQUAL,
     SLASH,
+
+    // Literals
+    STRING,
 
     EOF,
 }
