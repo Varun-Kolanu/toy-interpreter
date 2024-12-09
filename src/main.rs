@@ -1,8 +1,11 @@
+use std::collections::HashMap;
 use std::env;
 use std::fmt;
 use std::fs;
 use std::io::{self, Write};
 use std::process::exit;
+
+use once_cell::sync::Lazy;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -192,7 +195,15 @@ impl Scanner {
             self.current += 1;
         }
 
-        self.add_non_literal_token(TokenType::IDENTIFIER);
+        let identifier = &self.source[self.start..self.current];
+        let mut token_type = TokenType::IDENTIFIER;
+
+        // Keyword
+        if let Some(keyword_token_type) = KEYWORDS.get(identifier) {
+            token_type = keyword_token_type.clone();
+        }
+
+        self.add_non_literal_token(token_type);
     }
 
     fn peek_next(&self) -> char {
@@ -257,7 +268,7 @@ impl Default for Scanner {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(non_camel_case_types)]
 enum TokenType {
     // Single-character tokens.
@@ -289,8 +300,47 @@ enum TokenType {
 
     IDENTIFIER,
 
+    // Keywords
+    AND,
+    CLASS,
+    ELSE,
+    FALSE,
+    FUN,
+    FOR,
+    IF,
+    NIL,
+    OR,
+    PRINT,
+    RETURN,
+    SUPER,
+    THIS,
+    TRUE,
+    VAR,
+    WHILE,
+
     EOF,
 }
+
+static KEYWORDS: Lazy<HashMap<&'static str, TokenType>> = Lazy::new(|| {
+    let mut m = HashMap::new();
+    m.insert("and", TokenType::AND);
+    m.insert("class", TokenType::CLASS);
+    m.insert("else", TokenType::ELSE);
+    m.insert("false", TokenType::FALSE);
+    m.insert("for", TokenType::FOR);
+    m.insert("fun", TokenType::FUN);
+    m.insert("if", TokenType::IF);
+    m.insert("nil", TokenType::NIL);
+    m.insert("or", TokenType::OR);
+    m.insert("print", TokenType::PRINT);
+    m.insert("return", TokenType::RETURN);
+    m.insert("super", TokenType::SUPER);
+    m.insert("this", TokenType::THIS);
+    m.insert("true", TokenType::TRUE);
+    m.insert("var", TokenType::VAR);
+    m.insert("while", TokenType::WHILE);
+    m
+});
 
 enum Literal {
     STRING(String),
