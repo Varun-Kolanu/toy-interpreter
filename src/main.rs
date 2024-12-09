@@ -74,6 +74,12 @@ impl Scanner {
             ')' => self.add_token(TokenType::RIGHT_PAREN, String::from("null")),
             '{' => self.add_token(TokenType::LEFT_BRACE, String::from("null")),
             '}' => self.add_token(TokenType::RIGHT_BRACE, String::from("null")),
+            ',' => self.add_token(TokenType::COMMA, String::from("null")),
+            '.' => self.add_token(TokenType::DOT, String::from("null")),
+            '-' => self.add_token(TokenType::MINUS, String::from("null")),
+            '+' => self.add_token(TokenType::PLUS, String::from("null")),
+            ';' => self.add_token(TokenType::SEMICOLON, String::from("null")),
+            '*' => self.add_token(TokenType::STAR, String::from("null")),
             _ => error(
                 self.line,
                 String::from(format!("Unexpected character {}", c)),
@@ -130,6 +136,12 @@ enum TokenType {
     RIGHT_PAREN,
     LEFT_BRACE,
     RIGHT_BRACE,
+    COMMA,
+    DOT,
+    MINUS,
+    PLUS,
+    SEMICOLON,
+    STAR,
 
     EOF,
 }
