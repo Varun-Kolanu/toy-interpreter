@@ -72,6 +72,8 @@ impl Scanner {
         match c {
             '(' => self.add_token(TokenType::LEFT_PAREN, String::from("null")),
             ')' => self.add_token(TokenType::RIGHT_PAREN, String::from("null")),
+            '{' => self.add_token(TokenType::LEFT_BRACE, String::from("null")),
+            '}' => self.add_token(TokenType::RIGHT_BRACE, String::from("null")),
             _ => error(
                 self.line,
                 String::from(format!("Unexpected character {}", c)),
@@ -126,6 +128,8 @@ enum TokenType {
     // Single-character tokens.
     LEFT_PAREN,
     RIGHT_PAREN,
+    LEFT_BRACE,
+    RIGHT_BRACE,
 
     EOF,
 }
