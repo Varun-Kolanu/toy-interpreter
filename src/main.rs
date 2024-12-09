@@ -127,6 +127,8 @@ impl Scanner {
                     self.add_non_literal_token(TokenType::SLASH);
                 }
             }
+            ' ' | '\r' | '\t' => {}
+            '\n' => self.line += 1,
 
             _ => {
                 self.had_error = true;
